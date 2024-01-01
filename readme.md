@@ -21,5 +21,9 @@ This Python application allows users to search for torrents on 1337x.to, retriev
    ```
 
 ## Use
-```pip install -r requirements.txt```
-```python app.py```
+```
+pip install -r requirements.txt
+```
+```
+python app.py
+```
