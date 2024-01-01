@@ -18,6 +18,7 @@ This Python application allows users to search for torrents on 1337x.to, retriev
 
    ```bash
    git clone <repository-url>
+   ```
 
 ## Use
 ```pip install -r requirements.txt```
