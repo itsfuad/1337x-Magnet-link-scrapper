@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import { parse } from 'node-html-parser';
 import { writeFileSync } from 'fs';
 //read user input from console

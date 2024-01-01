@@ -1,4 +1,8 @@
 {
+  "name": "magnetcsv",
+  "version": "0.0.1",
+  "description": "A magnet link parser from 1337x.to. It will return the magnet link and all file info of the first results in a csv file.",
+  "main": "main.js",
   "type": "module",
   "dependencies": {
     "dom-parser": "^1.1.5",
