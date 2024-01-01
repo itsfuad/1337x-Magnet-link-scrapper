@@ -1,6 +1,6 @@
 # Torrent Search
 
-This Node.js application allows users to search for torrents on 1337x.to, retrieve torrent magnet links in a csv file.
+This Python application allows users to search for torrents on 1337x.to, retrieve torrent magnet links in a csv file.
 
 ## Features
 
@@ -9,8 +9,8 @@ This Node.js application allows users to search for torrents on 1337x.to, retrie
 
 ## Prerequisites
 
-- Node.js installed on your machine
-- npm (Node Package Manager) installed on your machine
+- Python installed on your machine
+- pip installed on your machine
 
 ## Installation
 
@@ -20,6 +20,5 @@ This Node.js application allows users to search for torrents on 1337x.to, retrie
    git clone <repository-url>
 
 ## Use
-node main.js
-
-> Enter search query: <your query>
+`pip install -r requirements.txt``
+`python app.py``
