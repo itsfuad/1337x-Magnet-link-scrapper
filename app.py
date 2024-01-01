@@ -9,13 +9,13 @@ URL = "https://1337x.to"
 Query = ""
 
 try:
-    torrents = []
+    torrents = {}
 
-    def get_torrents(url, choice):
+    def get_torrents(url, choice, max_pages=10):
         global Query
         if choice == "1":
             with ThreadPoolExecutor() as executor:
-                for i in range(1, 11):
+                for i in range(1, max_pages+1):
                     futures = [executor.submit(get_html, f"{url}/{i}/")]
                     if not futures[0].result():
                         if i == 1:
@@ -34,19 +34,20 @@ try:
 
         print(f"Getting {len(torrents)} magnet links...")
 
-        # Use list comprehension to fetch magnet links concurrently
+        # Get magnet links concurrently
         with ThreadPoolExecutor() as executor:
-            [executor.submit(get_magnet, torrent['torrent']) for torrent in torrents]
+            for torrent in torrents.values():
+                executor.submit(get_magnet, torrent)
 
         print("Writing to csv file...")
 
-        # Convert array of dictionaries to CSV file
-        with open(f"{Query}.csv", "w", newline="", encoding="utf-8") as csvfile:
-            fieldnames = torrents[0].keys()
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-            writer.writerows(torrents)
-
+        # Write to csv file
+        with open(f"{Query}.csv", "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Name", "Torrent", "Magnet", "Seeds", "Leeches", "Size"])
+            for torrent in torrents.values():
+                writer.writerow([torrent["name"], torrent["torent"], torrent["magnet"], torrent["seeds"], torrent["leeches"], torrent["size"]])
+                
         print("Done")
 
     def get_html(url):
@@ -70,30 +71,30 @@ try:
             size = row.select_one(".coll-4").get_text(strip=True)
 
             if item:
-                torrents.append({
-                    'name': name,
-                    'torrent': torrent,
-                    'seeds': seeds,
-                    'leeches': leeches,
-                    'size': size,
-                })
+                torrents[name] = {
+                    "name": name,
+                    "torent": torrent,
+                    "seeds": seeds,
+                    "leeches": leeches,
+                    "size": size,
+                }
 
         return True
-
-    magnet_regex = r"magnet:([^']+)"
+    
     
     def get_magnet(torrent):
         try:
-            res = requests.get(f"{URL}{torrent}", timeout=20)
+            res = requests.get(f"{URL}{torrent['torent']}", timeout=20)
             res.raise_for_status()
-            print(f"Fetched magnet link for {URL}{torrent}")
             html = res.text
             # parse html to get magnet link
-            magnet = re.search(magnet_regex, html).group(0) or ""
-            return magnet
+            magnet = re.search(r'magnet:?.+?"', html).group(0).rstrip('"') or "N/A"
+            # update torrent object
+            print(f"Got magnet link for {torrent['name']}")
+            torrents[torrent['name']]['magnet'] = magnet
         except requests.exceptions.RequestException as error:
             print(f"Error fetching magnet link for {URL}{torrent}: {error}")
-            return ''
+            torrents[torrent['name']]['magnet'] = "N/A"
 
     categories = [
         "Movies",
@@ -107,6 +108,7 @@ try:
 
     choice = input("Search by: \n1. Keyword / Name (Eg. Horror Movie, Bat Man)\n2. Link (Eg. https://1337.to/......)\n")
 
+    url = ""
     if choice == "1":
         query = input("Search: ")
         Query = query
@@ -118,17 +120,29 @@ try:
             if not 1 <= int(cat) <= len(categories):
                 print("Invalid category")
                 exit(1)
-            get_torrents(f"{URL}/category-search/{query}/{categories[int(cat)-1]}", choice)
+            #get_torrents(f"{URL}/category-search/{query}/{categories[int(cat)-1]}", choice)
+            url = f"{URL}/category-search/{query}/{categories[int(cat)-1]}"
         else:
-            get_torrents(f"{URL}/search/{query}", choice)
+            #get_torrents(f"{URL}/search/{query}", choice)
+            url = f"{URL}/search/{query}"
 
     elif choice == "2":
-        link = input("Link: ")
-        get_torrents(link, choice)
+        url = input("Link: ")
 
     else:
         print("Invalid choice")
         exit(1)
+
+    max_pages = input("Max pages: (Default: 10)\n")
+    if max_pages:
+        max_pages = int(max_pages)
+        if not 1 <= max_pages <= 15:
+            print("Invalid max pages")
+            exit(1)
+    else:
+        max_pages = 10
+
+    get_torrents(url, choice, max_pages)
 
 except Exception as err:
     print(err)
