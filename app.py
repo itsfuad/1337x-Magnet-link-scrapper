@@ -1,61 +1,57 @@
 #!/usr/bin/env python
-import requests
+import aiohttp
+import asyncio
 from bs4 import BeautifulSoup
 import csv
 import re
-from concurrent.futures import ThreadPoolExecutor
+import random
+import string
 
 URL = "https://1337x.to"
 Query = ""
+torrents = {}
 
-try:
-    torrents = {}
+async def get_torrents(url, choice):
+    global Query
+    if choice == "1":
+        max_pages = int(input("Max pages to scrape (Default: 10): ")) or 10
+        # Get torrents concurrently
+        async with aiohttp.ClientSession() as session:
+            tasks = [get_html(session, f"{url}/{i}/") for i in range(1, max_pages + 1)]
+            await asyncio.gather(*tasks)
 
-    def get_torrents(url, choice, max_pages=10):
-        global Query
-        if choice == "1":
-            with ThreadPoolExecutor() as executor:
-                for i in range(1, max_pages+1):
-                    futures = [executor.submit(get_html, f"{url}/{i}/")]
-                    if not futures[0].result():
-                        if i == 1:
-                            print("No torrents found")
-                            exit(1)
-                        else:
-                            print("No more torrents found")
-                            break
+    elif choice == "2":
+        async with aiohttp.ClientSession() as session:
+            await get_html(session, url)
 
-        elif choice == "2":
-            with ThreadPoolExecutor() as executor:
-                futures = [executor.submit(get_html, url)]
-                if not futures[0].result():
-                    print("No torrents found")
-                    exit(1)
+    # if torrents is empty
+    if len(torrents) == 0:
+        print("No torrents found. Skipping further steps...")
+        exit(1)
 
-        print(f"Getting {len(torrents)} magnet links...")
+    print(f"Getting {len(torrents)} magnet links...")
 
-        # Get magnet links concurrently
-        with ThreadPoolExecutor() as executor:
-            for torrent in torrents.values():
-                executor.submit(get_magnet, torrent)
+    # Get magnet links concurrently
+    async with aiohttp.ClientSession() as session:
+        tasks = [get_magnet(session, torrent) for torrent in torrents.values()]
+        await asyncio.gather(*tasks)
 
-        print("Writing to csv file...")
+    # Write to csv file
+    csv_filename = f"{Query or random_string()}.csv"
+    with open(csv_filename, "w", newline="", encoding="utf-8") as f:
+        writer = csv.writer(f)
+        writer.writerow(["Name", "Torrent", "Magnet", "Seeds", "Leeches", "Size"])
+        for torrent in torrents.values():
+            writer.writerow([torrent["name"], torrent["torrent"], torrent["magnet"], torrent["seeds"], torrent["leeches"], torrent["size"]])
 
-        # Write to csv file
-        with open(f"{Query}.csv", "w", newline="", encoding="utf-8") as f:
-            writer = csv.writer(f)
-            writer.writerow(["Name", "Torrent", "Magnet", "Seeds", "Leeches", "Size"])
-            for torrent in torrents.values():
-                writer.writerow([torrent["name"], torrent["torent"], torrent["magnet"], torrent["seeds"], torrent["leeches"], torrent["size"]])
-                
-        print("Done")
+    print("Done")
 
-    def get_html(url):
-        print(f"Getting torrents from {url}")
-        res = requests.get(url)
-        # time.sleep(1)
+async def get_html(session, url):
+    print(f"Getting torrents from {url}")
+
+    async with session.get(url) as response:
         print("Parsing data...")
-        soup = BeautifulSoup(res.text, 'html.parser')
+        soup = BeautifulSoup(await response.text(), 'html.parser')
 
         rows = soup.select("tbody > tr")
 
@@ -73,77 +69,65 @@ try:
             if item:
                 torrents[name] = {
                     "name": name,
-                    "torent": torrent,
+                    "torrent": torrent,
                     "seeds": seeds,
                     "leeches": leeches,
                     "size": size,
                 }
 
         return True
-    
-    
-    def get_magnet(torrent):
-        try:
-            res = requests.get(f"{URL}{torrent['torent']}", timeout=20)
-            res.raise_for_status()
-            html = res.text
+
+async def get_magnet(session, torrent):
+    try:
+        async with session.get(f"{URL}{torrent['torrent']}", timeout=20) as response:
+            response.raise_for_status()
+            html = await response.text()
             # parse html to get magnet link
             magnet = re.search(r'magnet:?.+?"', html).group(0).rstrip('"') or "N/A"
             # update torrent object
             print(f"Got magnet link for {torrent['name']}")
             torrents[torrent['name']]['magnet'] = magnet
-        except requests.exceptions.RequestException as error:
-            print(f"Error fetching magnet link for {URL}{torrent}: {error}")
-            torrents[torrent['name']]['magnet'] = "N/A"
+    except aiohttp.ClientError as error:
+        print(f"Error fetching magnet link for {URL}{torrent}: {error}")
+        torrents[torrent['name']]['magnet'] = "N/A"
 
-    categories = [
-        "Movies",
-        "TV",
-        "Games",
-        "Music",
-        "Apps",
-        "Anime",
-        "Documentaries",
-    ]
+def random_string(length=10):
+    return ''.join(random.choice(string.ascii_lowercase) for i in range(length))
 
-    choice = input("Search by: \n1. Keyword / Name (Eg. Horror Movie, Bat Man)\n2. Link (Eg. https://1337.to/......)\n")
+categories = [
+    "Movies",
+    "TV",
+    "Games",
+    "Music",
+    "Apps",
+    "Anime",
+    "Documentaries",
+]
 
-    url = ""
-    if choice == "1":
-        query = input("Search: ")
-        Query = query
-        print("Categories:\n")
-        for i, category in enumerate(categories, start=1):
-            print(f"{i}. {category}")
-        cat = input(f"Category: [1-{len(categories)}]\n")
-        if cat:
-            if not 1 <= int(cat) <= len(categories):
-                print("Invalid category")
-                exit(1)
-            #get_torrents(f"{URL}/category-search/{query}/{categories[int(cat)-1]}", choice)
-            url = f"{URL}/category-search/{query}/{categories[int(cat)-1]}"
-        else:
-            #get_torrents(f"{URL}/search/{query}", choice)
-            url = f"{URL}/search/{query}"
+choice = input("Search by: \n1. Keyword / Name (Eg. Horror Movie, Bat Man)\n2. Link (Eg. https://1337.to/......)\n")
 
-    elif choice == "2":
-        url = input("Link: ")
-
-    else:
-        print("Invalid choice")
-        exit(1)
-
-    max_pages = input("Max pages: (Default: 10)\n")
-    if max_pages:
-        max_pages = int(max_pages)
-        if not 1 <= max_pages <= 15:
-            print("Invalid max pages")
+url = ""
+if choice == "1":
+    query = input("Search: ")
+    Query = query
+    print("Categories:\n")
+    for i, category in enumerate(categories, start=1):
+        print(f"{i}. {category}")
+    cat = input(f"Category: [1-{len(categories)}]\n")
+    if cat:
+        if not 1 <= int(cat) <= len(categories):
+            print("Invalid category")
             exit(1)
+        url = f"{URL}/category-search/{query}/{categories[int(cat)-1]}"
     else:
-        max_pages = 10
+        url = f"{URL}/search/{query}"
 
-    get_torrents(url, choice, max_pages)
+elif choice == "2":
+    url = input("Link: ")
 
-except Exception as err:
-    print(err)
+else:
+    print("Invalid choice")
     exit(1)
+
+loop = asyncio.get_event_loop()
+loop.run_until_complete(get_torrents(url, choice))
