@@ -22,7 +22,12 @@ async def get_torrents(url, choice):
 
     elif choice == "2":
         async with aiohttp.ClientSession() as session:
-            await get_html(session, url)
+            page_number = int(url.split('/')[-2])
+            max_pages = int(input("Max pages to scrape (Default: 10): ")) or 10
+            # fetch pages from page_number to page_number + max_pages
+            url = url.replace(f'/{page_number}/', '')
+            tasks = [get_html(session, f"{url}/{i}/") for i in range(page_number, page_number + max_pages)]
+            await asyncio.gather(*tasks)
 
     # if torrents is empty
     if len(torrents) == 0:
