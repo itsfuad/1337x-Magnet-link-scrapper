@@ -11,10 +11,9 @@ URL = "https://1337x.to"
 Query = ""
 torrents = {}
 
-async def get_torrents(url, choice):
+async def get_torrents(url, choice, max_pages):
     global Query
     if choice == "1":
-        max_pages = int(input("Max pages to scrape (Default: 10): ")) or 10
         # Get torrents concurrently
         async with aiohttp.ClientSession() as session:
             tasks = [get_html(session, f"{url}/{i}/") for i in range(1, max_pages + 1)]
@@ -23,7 +22,6 @@ async def get_torrents(url, choice):
     elif choice == "2":
         async with aiohttp.ClientSession() as session:
             page_number = int(url.split('/')[-2])
-            max_pages = int(input("Max pages to scrape (Default: 10): ")) or 10
             # fetch pages from page_number to page_number + max_pages
             url = url.replace(f'/{page_number}/', '')
             tasks = [get_html(session, f"{url}/{i}/") for i in range(page_number, page_number + max_pages)]
@@ -134,5 +132,14 @@ else:
     print("Invalid choice")
     exit(1)
 
+max_pages = input("Max pages to fetch: ")
+if not max_pages or int(max_pages) < 1:
+    print("Invalid max pages. Defaulting to 10")
+    max_pages = 10
+else:
+    max_pages = int(max_pages)
+
 loop = asyncio.get_event_loop()
-loop.run_until_complete(get_torrents(url, choice))
+loop.run_until_complete(get_torrents(url, choice, max_pages))
+
+
