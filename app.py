@@ -11,7 +11,7 @@ URL = "https://1337x.to"
 Query = ""
 torrents = {}
 
-async def get_torrents(url, choice, max_pages):
+async def get_torrents(url: str, choice: str, max_pages: int):
     global Query
     if choice == "1":
         # Get torrents concurrently
@@ -127,6 +127,13 @@ if choice == "1":
 
 elif choice == "2":
     url = input("Link: ")
+        # if page doesn't end with /
+    if not url.endswith('/'):
+        print("Invalid link. Link should end with /")
+        exit(1)
+    elif not url.startswith(URL):
+        print("Invalid link. Link should start with https://1337x.to")
+        exit(1)
 
 else:
     print("Invalid choice")
