@@ -6,6 +6,7 @@ import csv
 import re
 import random
 import string
+import time
 
 URL = "https://1337x.to"
 Query = ""
@@ -13,6 +14,9 @@ torrents = {}
 
 async def get_torrents(url: str, choice: str, max_pages: int):
     global Query
+    # start timer
+    start = time.time()
+    print("Getting torrents...")
     if choice == "1":
         # Get torrents concurrently
         async with aiohttp.ClientSession() as session:
@@ -48,12 +52,13 @@ async def get_torrents(url: str, choice: str, max_pages: int):
             writer.writerow([torrent["name"], torrent["torrent"], torrent["magnet"], torrent["seeds"], torrent["leeches"], torrent["size"]])
 
     print("Done")
+    print(f"Time taken: {time.time() - start} seconds")
 
 async def get_html(session, url):
-    print(f"Getting torrents from {url}")
+    #print(f"Getting torrents from {url}")
 
     async with session.get(url) as response:
-        print("Parsing data...")
+        #print("Parsing data...")
         soup = BeautifulSoup(await response.text(), 'html.parser')
 
         rows = soup.select("tbody > tr")
@@ -88,7 +93,7 @@ async def get_magnet(session, torrent):
             # parse html to get magnet link
             magnet = re.search(r'magnet:?.+?"', html).group(0).rstrip('"') or "N/A"
             # update torrent object
-            print(f"Got magnet link for {torrent['name']}")
+            #print(f"Got magnet link for {torrent['name']}")
             torrents[torrent['name']]['magnet'] = magnet
     except aiohttp.ClientError as error:
         print(f"Error fetching magnet link for {URL}{torrent}: {error}")
