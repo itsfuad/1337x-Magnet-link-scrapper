@@ -1,6 +1,5 @@
 import aiohttp
 import asyncio
-import undetected_chromedriver as selenium
 
 
 url = "https://www.x137x.se/"
