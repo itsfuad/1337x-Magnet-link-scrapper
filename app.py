@@ -8,7 +8,7 @@ import random
 import string
 import time
 
-URL = "https://1337x.to"
+URL = "https://www.1337xx.to"
 Query = ""
 torrents = {}
 
@@ -63,6 +63,8 @@ async def get_html(session, url):
 
         rows = soup.select("tbody > tr")
 
+        #print(f"Found {len(rows)} torrents")
+
         if len(rows) == 0:
             return None
 
@@ -87,16 +89,18 @@ async def get_html(session, url):
 
 async def get_magnet(session, torrent):
     try:
-        async with session.get(f"{URL}{torrent['torrent']}", timeout=20) as response:
+        async with session.get(f"{URL}{torrent['torrent']}") as response:
             response.raise_for_status()
             html = await response.text()
-            # parse html to get magnet link
-            magnet = re.search(r'magnet:?.+?"', html).group(0).rstrip('"') or "N/A"
+            soup = BeautifulSoup(html, 'html.parser')
+            # parse html to get magnet link 'a[href^="magnet:"]'
+            magnet = soup.select_one('a[href^="magnet:"]').get("href") if soup.select_one('a[href^="magnet:"]') else "N/A"
             # update torrent object
             #print(f"Got magnet link for {torrent['name']}")
+            #print(f'Magnet: {magnet}\n\n')
             torrents[torrent['name']]['magnet'] = magnet
     except aiohttp.ClientError as error:
-        print(f"Error fetching magnet link for {URL}{torrent}: {error}")
+        print(f"Error fetching magnet link: {error}")
         torrents[torrent['name']]['magnet'] = "N/A"
 
 def random_string(length=10):
