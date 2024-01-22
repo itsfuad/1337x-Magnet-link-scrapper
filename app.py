@@ -141,7 +141,7 @@ elif choice == "2":
         print("Invalid link. Link should end with /")
         exit(1)
     elif not url.startswith(URL):
-        print("Invalid link. Link should start with https://1337x.to")
+        print("Invalid link. Link should start with https://www.1337xx.to")
         exit(1)
 
 else:
