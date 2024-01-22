@@ -12,6 +12,8 @@ URL = "https://www.1337xx.to"
 Query = ""
 torrents = {}
 
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'}
+
 async def get_torrents(url: str, choice: str, max_pages: int):
     global Query
     # start timer
@@ -51,19 +53,22 @@ async def get_torrents(url: str, choice: str, max_pages: int):
         for torrent in torrents.values():
             writer.writerow([torrent["name"], torrent["torrent"], torrent["magnet"], torrent["seeds"], torrent["leeches"], torrent["size"]])
 
-    print("Done")
+    print(f"Saved to {csv_filename}")
     print(f"Time taken: {time.time() - start} seconds")
 
 async def get_html(session, url):
     #print(f"Getting torrents from {url}")
 
-    async with session.get(url) as response:
+    async with session.get(url, headers=headers) as response:
         #print("Parsing data...")
         soup = BeautifulSoup(await response.text(), 'html.parser')
 
         rows = soup.select("tbody > tr")
 
-        #print(f"Found {len(rows)} torrents")
+        # .../.../..../1/  the number is at the end
+        page = int(url.split('/')[-2])
+
+        print(f"Found {len(rows)} torrents in page {page}")
 
         if len(rows) == 0:
             return None
@@ -79,7 +84,7 @@ async def get_html(session, url):
             if item:
                 torrents[name] = {
                     "name": name,
-                    "torrent": torrent,
+                    "torrent": URL+torrent,
                     "seeds": seeds,
                     "leeches": leeches,
                     "size": size,
@@ -89,12 +94,11 @@ async def get_html(session, url):
 
 async def get_magnet(session, torrent):
     try:
-        async with session.get(f"{URL}{torrent['torrent']}") as response:
-            response.raise_for_status()
+        async with session.get(f"{torrent['torrent']}", headers=headers) as response:
             html = await response.text()
             soup = BeautifulSoup(html, 'html.parser')
             # parse html to get magnet link 'a[href^="magnet:"]'
-            magnet = soup.select_one('a[href^="magnet:"]').get("href") if soup.select_one('a[href^="magnet:"]') else "N/A"
+            magnet = soup.select_one('a[href^="magnet:"]').get("href") if soup.select_one('a[href^="magnet:"]') else html
             # update torrent object
             #print(f"Got magnet link for {torrent['name']}")
             #print(f'Magnet: {magnet}\n\n')
@@ -157,7 +161,6 @@ if not max_pages or int(max_pages) < 1:
 else:
     max_pages = int(max_pages)
 
-loop = asyncio.get_event_loop()
-loop.run_until_complete(get_torrents(url, choice, max_pages))
+asyncio.run(get_torrents(url, choice, max_pages))
 
 
