@@ -8,7 +8,6 @@ import random
 import string
 import time
 
-
 URL = "https://www.1337xx.to"
 Query = ""
 torrents = {}
