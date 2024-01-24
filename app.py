@@ -38,7 +38,7 @@ async def get_torrents(url: str, choice: str, max_pages: int):
         print("No torrents found. Skipping further steps...")
         exit(1)
 
-    print(f"Getting {len(torrents)} magnet links...")
+    #print(f"Getting {len(torrents)} magnet links...")
 
     # Get magnet links concurrently
     async with aiohttp.ClientSession() as session:
