@@ -18,7 +18,7 @@ async def get_torrents(url: str, choice: str, max_pages: int):
     global Query
     # start timer
     start = time.time()
-    print("Getting torrents...")
+    #print("Getting torrents...")
     if choice == "1":
         # Get torrents concurrently
         async with aiohttp.ClientSession() as session:
