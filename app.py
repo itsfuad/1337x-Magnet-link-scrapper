@@ -149,7 +149,6 @@ elif choice == "2":
         print("Invalid link. Link should start with https://www.1337xx.to")
         exit(1)
     '''
-
 else:
     print("Invalid choice")
     exit(1)
