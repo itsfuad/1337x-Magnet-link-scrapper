@@ -142,7 +142,7 @@ elif choice == "2":
     url = input("Link: ")
         # if page doesn't end with /
     if not url.endswith('/'):
-        print("Invalid link. Link should end with /")
+        print("Invalid link. Link should end with '/'")
         exit(1)
 else:
     print("Invalid choice")
