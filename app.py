@@ -150,7 +150,7 @@ else:
 
 max_pages = input("Max pages to fetch: ")
 if not max_pages or int(max_pages) < 1:
-    print("Invalid max pages. Defaulting to 10")
+    print("Invalid max pages. Fetching 10 pages as default.")
     max_pages = 10
 else:
     max_pages = int(max_pages)
