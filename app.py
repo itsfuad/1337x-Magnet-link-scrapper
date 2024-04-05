@@ -3,7 +3,7 @@ import aiohttp
 import asyncio
 from bs4 import BeautifulSoup
 import csv
-import re
+# import re
 import random
 import string
 import time
@@ -48,7 +48,7 @@ async def get_torrents(url: str, choice: str, max_pages: int):
     # Write to csv file
     csv_filename = f"{Query or random_string()}.csv"
     with open(csv_filename, "w", newline="", encoding="utf-8") as f:
-        writer = csv.writer(f)
+        writer = csv.writer(f, quoting=csv.QUOTE_ALL)
         writer.writerow(["Name", "Torrent", "Magnet", "Seeds", "Leeches", "Size"])
         for torrent in torrents.values():
             writer.writerow([torrent["name"], torrent["torrent"], torrent["magnet"], torrent["seeds"], torrent["leeches"], torrent["size"]])

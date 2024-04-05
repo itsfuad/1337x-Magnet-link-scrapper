@@ -1,12 +1,27 @@
-url = 'https://1337x.to/search/cat/ss/26/'
+import aiohttp
+import asyncio
+import undetected_chromedriver as selenium
 
-# split by / and get the last element
 
-page_number = int(url.split('/')[-2])
+url = "https://www.x1337x.se/"
 
-#remove the page number from the url
-raw_page_without_number = url.replace(f'/{page_number}/', '/')
+async def start():
+    cf_clearance = ".qftT5zprqt.3ampo.oki0lCStqnFf2YmIbuUDMGMhk-1707565747-1-AROluPSj0JpniA7QTiZZZCfhrJYsvkUmJcl0dEmLQc4M7D1g9RESqE+ZX1AQ0lgXGc7qxs/wKEFEoTGVedqABr8="
+    cookies = {
+        "cf_clearance": cf_clearance
+    }
+    async with aiohttp.ClientSession(cookies=cookies) as session:
+        try:
 
-print(page_number)
+            response = await session.get(url)
+            if response.status != 200:
+                print(f"Error: {response.status}")
+                return
+            else:
+                print(f"Success: {response.status}")
 
-print(raw_page_without_number)
+        except Exception as e:
+            print(f"Error: {e}")
+            return
+
+asyncio.run(start())
