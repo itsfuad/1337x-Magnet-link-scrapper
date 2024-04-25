@@ -2,7 +2,6 @@
 
 This Python application allows users to search for torrents on 1337x.to, retrieve torrent magnet links in a csv file.
 
-
 ## Features
 
 - Search for torrents on 1337x.to using a user-provided query.
